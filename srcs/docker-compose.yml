@@ -69,7 +69,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 --silent || exit 1"]
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -u $${MYSQL_USER} --password=\"$$(cat /run/secrets/db_password)\" --silent || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -78,20 +78,23 @@ services:
 
 networks:
   webnet:
+    name: webnet
     driver: bridge
 
 volumes:
   wp_data:
+    name: wp_data
     driver: local
     driver_opts:
       type: none
-      device: /home/${USER}/data/wordpress
+      device: ${HOME}/data/wordpress
       o: bind
   db_data:
+    name: db_data
     driver: local
     driver_opts:
       type: none
-      device: /home/${USER}/data/mariadb
+      device: ${HOME}/data/mariadb
       o: bind
 
 secrets:

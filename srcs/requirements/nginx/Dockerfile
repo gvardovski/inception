@@ -12,6 +12,7 @@ RUN mkdir -p /etc/nginx/certs && \
 COPY ./conf/nginx.conf /etc/nginx/nginx.conf
 
 COPY ./tools/start.sh /start.sh
+
 RUN chmod +x /start.sh
 
 EXPOSE 443

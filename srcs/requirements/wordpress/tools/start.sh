@@ -16,20 +16,11 @@ load_secret() {
     fi
 }
 
-sed_escape() {
-    printf '%s' "$1" | sed 's/[\/&]/\\&/g'
-}
-
 load_secret WP_DB_PASSWORD
 load_secret WP_ADMIN_PASSWORD
 load_secret WP_USER_PASSWORD
 
-DB_NAME="${WP_DB_NAME:-wordpress}"
-DB_USER="${WP_DB_USER:-wpuser}"
-DB_PASS="${WP_DB_PASSWORD:-}"
-DB_HOST="${WP_DB_HOST:-mariadb:3306}"
-
-WP_URL="${WP_URL:-https://localhost}"
+WP_URL="${WP_URL:-https://svolkau.42.fr}"
 WP_TITLE="${WP_TITLE:-Inception}"
 WP_ADMIN_USER="${WP_ADMIN_USER:-siteowner}"
 WP_ADMIN_PASSWORD="${WP_ADMIN_PASSWORD:-}"
@@ -41,25 +32,14 @@ WP_USER_ROLE="${WP_USER_ROLE:-author}"
 
 WP_ADMIN_USER_LC="$(printf '%s' "${WP_ADMIN_USER}" | tr '[:upper:]' '[:lower:]')"
 case "${WP_ADMIN_USER_LC}" in
-    *admin*|*administrator*)
+    (*admin*|*administrator*)
         echo "Error: WP_ADMIN_USER must not contain 'admin' or 'administrator'." >&2
         exit 1
         ;;
 esac
 
 if [ ! -f "${WP_CONFIG}" ]; then
-    cp "${WP_DIR}/wp-config-sample.php" "${WP_CONFIG}"
-
-    DB_NAME_ESC="$(sed_escape "${DB_NAME}")"
-    DB_USER_ESC="$(sed_escape "${DB_USER}")"
-    DB_PASS_ESC="$(sed_escape "${DB_PASS}")"
-    DB_HOST_ESC="$(sed_escape "${DB_HOST}")"
-
-    sed -i "s/database_name_here/${DB_NAME_ESC}/" "${WP_CONFIG}"
-    sed -i "s/username_here/${DB_USER_ESC}/" "${WP_CONFIG}"
-    sed -i "s/password_here/${DB_PASS_ESC}/" "${WP_CONFIG}"
-    sed -i "s/localhost/${DB_HOST_ESC}/" "${WP_CONFIG}"
-
+    cp /etc/wordpress/wp-config.php "${WP_CONFIG}"
     chown nobody:nobody "${WP_CONFIG}"
 fi
 

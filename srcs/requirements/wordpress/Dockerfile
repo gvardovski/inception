@@ -38,13 +38,13 @@ RUN curl -o /tmp/wordpress.tar.gz "https://wordpress.org/wordpress-${WORDPRESS_V
 RUN curl -L "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/wp-cli-${WP_CLI_VERSION}.phar" \
     -o /usr/local/bin/wp && chmod +x /usr/local/bin/wp
 
-RUN sed -i 's|listen = 127.0.0.1:9000|listen = 0.0.0.0:9000|' /etc/php82/php-fpm.d/www.conf && \
-    sed -i 's|user = nobody|user = nobody|' /etc/php82/php-fpm.d/www.conf && \
-    sed -i 's|group = nobody|group = nobody|' /etc/php82/php-fpm.d/www.conf
+COPY conf/www.conf /etc/php82/php-fpm.d/www.conf
+COPY conf/wp-config.php /etc/wordpress/wp-config.php
 
 RUN chown -R nobody:nobody /var/www/wordpress
 
 COPY tools/start.sh /start.sh
+
 RUN chmod +x /start.sh
 
 EXPOSE 9000
