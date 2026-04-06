@@ -38,12 +38,13 @@ install-docker:
 	
 add-user-to-group:
 	sudo usermod -aG docker $(USER)
+	newgrp docker
 	@echo "✅ Added $(USER) to docker group. Log out and back in to apply group changes."
 
 volumes:
-	sudo mkdir -p /home/$(USER)/data/wordpress
-	sudo mkdir -p /home/$(USER)/data/mariadb
-	sudo chown -R $(USER):$(USER) /home/$(USER)/data
+	sudo mkdir -p $(HOME)/data/wordpress
+	sudo mkdir -p $(HOME)/data/mariadb
+	sudo chown -R $(USER):$(USER) $(HOME)/data
 
 domain:
 	@LOCAL_IP=$$(hostname -I | awk '{print $$1}'); \
@@ -57,7 +58,7 @@ domain:
 docker: check-apt install-prereqs create-keyring download-key set-permissions add-repo install-docker add-user-to-group volumes
 	@echo "✅ Docker installation complete!"
 
-build:
+build: volumes
 	cd srcs/ && docker compose build --no-cache
 
 up: domain
@@ -79,6 +80,16 @@ sync-domain-ip:
 
 down:
 	cd srcs/ && docker compose down
-	
+
+clean:
+	cd srcs/ && docker compose down --rmi all --remove-orphans
+	@echo "✅ Stopped and removed Docker containers and volumes."
+
+fclean:
+	cd srcs/ && docker compose down -v --rmi all --remove-orphans
+	sudo rm -rf $(HOME)/data/wordpress
+	sudo rm -rf $(HOME)/data/mariadb
+	@echo "✅ Cleaned up Docker containers, volumes, images, and configuration files."
+
 .PHONY: build up down docker install-docker add-repo set-permissions download-key create-keyring install-prereqs \
 	check-apt add-user-to-group volumes domain sync-domain-ip
