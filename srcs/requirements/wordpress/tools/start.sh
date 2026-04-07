@@ -38,10 +38,9 @@ case "${WP_ADMIN_USER_LC}" in
         ;;
 esac
 
-if [ ! -f "${WP_CONFIG}" ]; then
-    cp /etc/wordpress/wp-config.php "${WP_CONFIG}"
-    chown nobody:nobody "${WP_CONFIG}"
-fi
+# Keep runtime config synchronized with the image template across restarts.
+cp /etc/wordpress/wp-config.php "${WP_CONFIG}"
+chown nobody:nobody "${WP_CONFIG}"
 
 until wp db check --path="${WP_DIR}" --allow-root >/dev/null 2>&1; do
     sleep 2
