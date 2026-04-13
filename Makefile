@@ -47,12 +47,13 @@ volumes:
 	sudo chown -R $(USER):$(USER) $(HOME)/data
 
 domain:
-	@LOCAL_IP=$$(hostname -I | awk '{print $$1}'); \
-	if grep -qE "(^|[[:space:]])svolkau\.42\.fr([[:space:]]|$$)" /etc/hosts; then \
+	@HOSTS_IP=$$(awk '!/^[[:space:]]*#/ {for (i = 2; i <= NF; i++) if ($$i == "svolkau.42.fr") ip = $$1} END {print ip}' /etc/hosts); \
+	if [ "$$HOSTS_IP" = "127.0.0.1" ]; then \
 		echo "✅ Domain svolkau.42.fr is already configured in /etc/hosts"; \
 	else \
-		echo "$$LOCAL_IP svolkau.42.fr" | sudo tee -a /etc/hosts > /dev/null; \
-		echo "✅ Added svolkau.42.fr -> $$LOCAL_IP to /etc/hosts"; \
+		sudo sed -i -E '/(^|[[:space:]])svolkau\.42\.fr([[:space:]]|$$)/d' /etc/hosts; \
+		echo "127.0.0.1 svolkau.42.fr" | sudo tee -a /etc/hosts > /dev/null; \
+		echo "✅ Set svolkau.42.fr -> 127.0.0.1 in /etc/hosts"; \
 	fi
 
 docker: check-apt install-prereqs create-keyring download-key set-permissions add-repo install-docker add-user-to-group volumes
@@ -66,16 +67,10 @@ up: domain
 	@$(MAKE) sync-domain-ip
 
 sync-domain-ip:
-	@NGINX_IP=$$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' nginx 2>/dev/null); \
-	if [ -z "$$NGINX_IP" ]; then \
-		exit 1; \
-	fi; \
-	HOSTS_IP=$$(awk '!/^[[:space:]]*#/ {for (i = 2; i <= NF; i++) if ($$i == "svolkau.42.fr") ip = $$1} END {print ip}' /etc/hosts); \
-	if [ "$$HOSTS_IP" = "$$NGINX_IP" ]; then \
-		exit 0; \
-	else \
+	@HOSTS_IP=$$(awk '!/^[[:space:]]*#/ {for (i = 2; i <= NF; i++) if ($$i == "svolkau.42.fr") ip = $$1} END {print ip}' /etc/hosts); \
+	if [ "$$HOSTS_IP" != "127.0.0.1" ]; then \
 		sudo sed -i -E '/(^|[[:space:]])svolkau\.42\.fr([[:space:]]|$$)/d' /etc/hosts; \
-		echo "$$NGINX_IP svolkau.42.fr" | sudo tee -a /etc/hosts > /dev/null; \
+		echo "127.0.0.1 svolkau.42.fr" | sudo tee -a /etc/hosts > /dev/null; \
 	fi
 
 down:
@@ -85,11 +80,15 @@ clean:
 	cd srcs/ && docker compose down --rmi all --remove-orphans
 	@echo "✅ Stopped and removed Docker containers and volumes."
 
-fclean:
+myfclean:
 	cd srcs/ && docker compose down -v --rmi all --remove-orphans
 	sudo rm -rf $(HOME)/data/wordpress
 	sudo rm -rf $(HOME)/data/mariadb
 	@echo "✅ Cleaned up Docker containers, volumes, images, and configuration files."
 
-.PHONY: build up down docker install-docker add-repo set-permissions download-key create-keyring install-prereqs \
+fclean:
+	docker stop $$(docker ps -aq); docker rm $$(docker ps -aq); docker rmi $$(docker images -qa); docker volume rm $$(docker volume ls -q); docker network rm $$(docker network ls -q) 2>/dev/null
+	@echo "✅ Removed all Docker containers, images, volumes, and networks."
+
+.PHONY:  clean myfclean fclean build up down docker install-docker add-repo set-permissions download-key create-keyring install-prereqs \
 	check-apt add-user-to-group volumes domain sync-domain-ip

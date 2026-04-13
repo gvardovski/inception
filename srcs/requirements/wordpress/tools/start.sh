@@ -11,7 +11,7 @@ load_secret() {
     file_path="$(eval "printf '%s' \"\${${file_var_name}:-}\"")"
 
     if [ -n "$file_path" ] && [ -f "$file_path" ]; then
-        secret_value="$(cat "$file_path")"
+        secret_value="$(cat "$file_path" | tr -d '\n\r')"
         export "$var_name=$secret_value"
     fi
 }

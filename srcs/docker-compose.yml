@@ -49,7 +49,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
-      start_period: 30s
+      start_period: 45s
     restart: unless-stopped
     
   mariadb:
@@ -69,11 +69,11 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -u $${MYSQL_USER} --password=\"$$(cat /run/secrets/db_password)\" --silent || exit 1"]
+      test: ["CMD-SHELL", "mariadb -h 127.0.0.1 -u $${MYSQL_USER} --password=\"$$(cat /run/secrets/db_password | tr -d '\\n\\r')\" -e 'SELECT 1' >/dev/null 2>&1 || exit 1"]
       interval: 5s
       timeout: 3s
-      retries: 20
-      start_period: 20s
+      retries: 30
+      start_period: 90s
     restart: unless-stopped
 
 networks:
